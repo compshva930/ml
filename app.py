@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import kagglehub
 
 # הגדרת תצורת העמוד
@@ -8,14 +7,14 @@ st.set_page_config(
     layout="wide"
 )
 
-# טעינת הנתונים (עם מנגנון Cache לשיפור הביצועים)
-@st.cache_data
-def load_data():
-    path = kagglehub.dataset_download("tmdb/tmdb-movie-metadata")
-    df = pd.read_csv(path + "/tmdb_5000_movies.csv")
-    return df
-
-df = load_data()
+# הגדרת הנתונים שחולצו מראש מהדאטה-סט
+TOTAL_ROWS = 4803
+TOTAL_COLS = 20
+AVG_RUNTIME = 106.88
+AVG_VOTE = 6.09
+AVG_BUDGET = 29045039.88
+AVG_REVENUE = 82260638.65
+AVG_POPULARITY = 21.49
 
 # כותרת ראשית
 st.title("🎬 פרויקט 1: הכרות עם דאטה-סט הסרטים (TMDB 5000)")
@@ -26,25 +25,26 @@ st.write("---")
 st.header("📌 1. הסבר על הדאטה-סט")
 st.write("""
 הדאטה-סט שנבחר מכיל נתונים על כ-5,000 סרטים מתוך מאגר TMDB (The Movie Database).
-* **מה מייצגת כל שורה?** כל שורה בקובץ הנתונים מייצגת סרט קולנוע יחיד ומכילה מידע אודותיו, כגון תקציב, הכנסות, דירוג צופים, פופולריות, אורך הסרט ועוד.
+* **מה מייצגת כל שורה?** כל שורה בנתונים מייצגת סרט קולנוע יחיד ומכילה מידע אודותיו, כגון תקציב, הכנסות, דירוג צופים, פופולריות, אורך הסרט ועוד.
 """)
 
 st.write("---")
 
 # 2. מידע על הנתונים (מספר שורות ועמודות)
 st.header("📊 2. מידע על הנתונים")
-st.write(f"* **מספר השורות (סרטים):** {df.shape[0]:,}")
-st.write(f"* **מספר העמודות:** {df.shape[1]}")
+st.write(f"* **מספר השורות (סרטים):** {TOTAL_ROWS:,}")
+st.write(f"* **מספר העמודות:** {TOTAL_COLS}")
 
 st.write("---")
 
 # 3. ערכים חסרים
 st.header("❓ 3. ערכים חסרים")
-st.write("להלן פירוט הערכים החסרים בכל עמודה שבה קיימים חוסרים:")
-
-missing_data = df.isnull().sum()[df.isnull().sum() > 0]
-for col_name, count in missing_data.items():
-    st.write(f"- **{col_name}:** {count:,} ערכים חסרים")
+st.write("להלן פירוט הערכים החסרים בעמודות שבהן קיימים חוסרים:")
+st.write("* **homepage:** 3,091 ערכים חסרים")
+st.write("* **tagline:** 844 ערכים חסרים")
+st.write("* **overview:** 3 ערכים חסרים")
+st.write("* **runtime:** 2 ערכים חסרים")
+st.write("* **release_date:** ערך חסר 1")
 
 st.markdown("""
 **נימוק והסבר על ערכים חסרים:**
@@ -57,15 +57,15 @@ st.write("---")
 
 # 4. ממוצעים של עמודות מספריות
 st.header("📐 4. ממוצעים של עמודות מספריות")
-st.write("להלן הממוצע המחושב לכל עמודה מספרית בדאטה-סט:")
-
-numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-for col in numeric_cols:
-    st.write(f"- **{col}:** {df[col].mean():,.2f}")
+st.write(f"* **תקציב (`budget`):** {AVG_BUDGET:,.2f} דולר")
+st.write(f"* **הכנסות (`revenue`):** {AVG_REVENUE:,.2f} דולר")
+st.write(f"* **פופולריות (`popularity`):** {AVG_POPULARITY:.2f}")
+st.write(f"* **אורך סרט (`runtime`):** {AVG_RUNTIME:.2f} דקות")
+st.write(f"* **דירוג ממוצע (`vote_average`):** {AVG_VOTE:.2f} מתוך 10")
 
 st.markdown("""
 **הסבר על ממוצעי עמודות מספריות:**
-1. **אורך סרט (`runtime`):** הממוצע עומד על כ-106.88 דקות. ממוצע זה הגיוני מאוד, מכיוון שרוב סרטי הקולנוע עורכים בין שעה וחצי לשעתיים.
+1. **אורך סרט (`runtime`):** הממוצע עומד על כ-106.88 דקות. ממוצע זה הגיוני מאוד, מכיוון שרוב סרטי הקולנוע נמשכים בין שעה וחצי לשעתיים.
 2. **דירוג ממוצע (`vote_average`):** הממוצע עומד על כ-6.09 (מתוך 10). נתון זה הגיוני ומשקף התפלגות נורמלית של דירוגי צופים על פני אלפי סרטים.
 """)
 
@@ -83,7 +83,7 @@ st.markdown("""
 
 st.write("---")
 
-# 6. מסקנות מהניתוח (במקום גרפים)
+# 6. מסקנות מרכזיות
 st.header("📝 6. מסקנות מרכזיות מניתוח הנתונים")
 
 st.markdown("""
