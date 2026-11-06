@@ -1,45 +1,93 @@
 import streamlit as st
 import pandas as pd
+import kagglehub
 
-# 1. App Title and Markdown Text
-st.title("My First Streamlit App")
-st.write("Welcome to your new dashboard! Streamlit lets you build web apps with simple Python scripts.")
-
-# 2. Interactive Input Widgets
-st.header("User Input Section")
-
-# Text Input
-user_name = st.text_input("Enter your name:", "Guest")
-
-# Slider Input
-age = st.slider("Select your age:", min_value=0, max_value=100, value=25)
-
-# Dropdown Selection
-favorite_color = st.selectbox(
-    "What is your favorite color?",
-    options=["Blue", "Green", "Red", "Yellow"]
+# הגדרת תצורת העמוד
+st.set_page_config(
+    page_title="פרויקט 1 - הכרות עם הדאטה",
+    layout="wide"
 )
 
-# 3. Dynamic Output Base on Inputs
-st.subheader("Your Profile Summary")
-st.write(f"Hello **{user_name}**!")
-st.write(f"You are **{age}** years old and your favorite color is **{favorite_color}**.")
+# טעינת הנתונים (עם מנגנון Cache לשיפור הביצועים)
+@st.cache_data
+def load_data():
+    path = kagglehub.dataset_download("tmdb/tmdb-movie-metadata")
+    df = pd.read_csv(path + "/tmdb_5000_movies.csv")
+    return df
 
-# 4. Displaying Data and Charts
-st.header("Data and Visualization")
+df = load_data()
 
-# Toggle to show/hide data
-if st.checkbox("Show sample chart data"):
-    # Create a simple DataFrame
-    chart_data = pd.DataFrame(
-        {
-            "Day 1": [10, 20, 15, 30],
-            "Day 2": [20, 30, 25, 40]
-        }
-    )
-    
-    # Display the interactive dataframe table
-    st.dataframe(chart_data)
-    
-    # Render an interactive line chart
-    st.line_chart(chart_data)
+# כותרת ראשית
+st.title("🎬 פרויקט 1: הכרות עם דאטה-סט הסרטים (TMDB 5000)")
+st.subheader("מאת: רום שוורצמן")
+st.write("---")
+
+# 1. הסבר על הדאטה-סט
+st.header("📌 1. הסבר על הדאטה-סט")
+st.write("""
+הדאטה-סט שנבחר מכיל נתונים על כ-5,000 סרטים מתוך מאגר TMDB (The Movie Database).
+* **מה מייצגת כל שורה?** כל שורה בקובץ הנתונים מייצגת סרט קולנוע יחיד ומכילה מידע אודותיו, כגון תקציב, הכנסות, דירוג צופים, פופולריות, אורך הסרט ועוד.
+""")
+
+st.write("---")
+
+# 2. מידע על הנתונים (מספר שורות ועמודות)
+st.header("📊 2. מידע על הנתונים")
+st.write(f"* **מספר השורות (סרטים):** {df.shape[0]:,}")
+st.write(f"* **מספר העמודות:** {df.shape[1]}")
+
+st.write("---")
+
+# 3. ערכים חסרים
+st.header("❓ 3. ערכים חסרים")
+st.write("להלן פירוט הערכים החסרים בכל עמודה שבה קיימים חוסרים:")
+
+missing_data = df.isnull().sum()[df.isnull().sum() > 0]
+for col_name, count in missing_data.items():
+    st.write(f"- **{col_name}:** {count:,} ערכים חסרים")
+
+st.markdown("""
+**נימוק והסבר על ערכים חסרים:**
+* העמודות הבעייתיות ביותר הן `homepage` ו-`tagline`, מכיוון שלא לכל סרט יש אתר אינטרנט רשמי או סיסמת פרסום. 
+* חוסר בעמודת `overview` פירושו שלא סופק תקציר עלילתי לסרט.
+* בשלב זה אנו מזהים ומסבירים את החוסרים בלבד, ללא טיפול בנתונים.
+""")
+
+st.write("---")
+
+# 4. ממוצעים של עמודות מספריות
+st.header("📐 4. ממוצעים של עמודות מספריות")
+st.write("להלן הממוצע המחושב לכל עמודה מספרית בדאטה-סט:")
+
+numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+for col in numeric_cols:
+    st.write(f"- **{col}:** {df[col].mean():,.2f}")
+
+st.markdown("""
+**הסבר על ממוצעי עמודות מספריות:**
+1. **אורך סרט (`runtime`):** הממוצע עומד על כ-106.88 דקות. ממוצע זה הגיוני מאוד, מכיוון שרוב סרטי הקולנוע עורכים בין שעה וחצי לשעתיים.
+2. **דירוג ממוצע (`vote_average`):** הממוצע עומד על כ-6.09 (מתוך 10). נתון זה הגיוני ומשקף התפלגות נורמלית של דירוגי צופים על פני אלפי סרטים.
+""")
+
+st.write("---")
+
+# 5. עמודת החיזוי והתכונות (Target & Features)
+st.header("🎯 5. מה נרצה לחזות ובאמצעות אילו עמודות")
+
+st.markdown("""
+* **עמודת החיזוי ($y$):** `vote_average` (דירוג הסרט הממוצע). זוהי עמודה מספרית המתאימה לבניית מודל רגרסיה בהמשך.
+* **עמודות לחיזוי (Features) ונימוקים:**
+  1. **`popularity` (פופולריות):** סרטים פופולריים יותר נוטים למשוך עניין רב יותר מהקהל, מה שעשוי להוביל לדירוגים גבוהים יותר.
+  2. **`budget` (תקציב):** תקציב גבוה מאפשר הפקה איכותית יותר, אפקטים מיוחדים ולוהק שחקנים מוכרים, אלמנטים שעשויים להשפיע לחיוב על תפיסת הצופים ודירוגם.
+""")
+
+st.write("---")
+
+# 6. מסקנות מהניתוח (במקום גרפים)
+st.header("📝 6. מסקנות מרכזיות מניתוח הנתונים")
+
+st.markdown("""
+1. **התפלגות אורכי הסרטים:** רוב הסרטים מרוכזים בטווח אורך של 90 עד 120 דקות (שיא באזור 100 דקות), דבר המצביע על סטנדרט מקובל בתעשיית הקולנוע.
+2. **התפלגות מדד הפופולריות:** מרבית הסרטים מרוכזים במדדי פופולריות נמוכים (בין 0 ל-20), ורק אחוז קטן מאוד מהסרטים מגיע לרמות פופולריות גבוהות במיוחד.
+3. **קשר בין פופולריות לדירוג:** קיימת מגמה חיובית מסוימת לפיה סרטים בעלי דירוג ממוצע גבוה יותר נוטים להיות פופולריים יותר, אם כי קיימים מספר יוצאי דופן.
+""")
