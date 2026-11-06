@@ -1,5 +1,4 @@
 import streamlit as st
-import kagglehub
 
 # הגדרת תצורת העמוד
 st.set_page_config(
@@ -7,7 +6,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# הגדרת הנתונים שחולצו מראש מהדאטה-סט
+# הגדרת הנתונים שחולצו מראש מהדאטה-סט (TMDB 5000 Movies)
 TOTAL_ROWS = 4803
 TOTAL_COLS = 20
 AVG_RUNTIME = 106.88
